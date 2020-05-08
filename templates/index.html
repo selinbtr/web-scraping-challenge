@@ -10,15 +10,66 @@
 </head>
 
 <body>
-  <div class="container">
-
+  <div class="container-fluid">
     <div class="jumbotron text-center">
       <h1>Mission to Mars</h1>
-      <p><a class="btn btn-primary btn-lg" href="/scrape" role="button">Scrape new data</a></p>
+      <p><a class="btn btn-primary btn-lg" href="/scrape" role="button">Scrape New Data!</a></p>
+    </div>
+    <!-- Row 1 -->
+    <div class="row">
+
+      <div class="col-md-12">
+        <h2 style="color: darkgray;">Latest Mars News</h2>
+        <h3>{{mars.news_title}}</h3>
+        <h4>{{mars.news_p}}</h4>
+      </div>
+
+        <br>
+
+      <div class="col-md-6">
+        <h2 style="color: darkgray;">Featured Mars Image</h2>
+        <img src="{{mars.featured_image_url}}" alt="Featured_mars" style="width: 600px; height: 500PX;" >
+      </div>
+      
+      <div class="col-md-6">
+
+        <h2 style="color: darkgray;">Current Weather on Mars</h2>
+        <h3>{{mars.mars_weather}}</h3>
+        
+        <br>
+
+        <h2 style="color: darkgray;">Mars Facts</h2>
+        <div style="max-width: 450px; max-height: 150px; font-size: 15px; margin-bottom: 65px;">
+          {{mars.html_table|safe}}
+        </div>
+
+      </div>
+
+
+      <div class="col-md-12">
+        <h2 style="color: darkgray;">Mars Hemispheres</h2>
+      </div>
+      <div class="col-md-6">
+        <img src="{{mars.hemisphere_image_urls[0].img_url}}" alt="Hems_mars" style="width: 600px; height: auto;">
+        <p>{{mars.hemisphere_image_urls[0].Title}}</p>
+      </div>
+      <div class="col-md-6">
+        <img src="{{mars.hemisphere_image_urls[1].img_url}}" alt="Hems_mars" style="width: 600px; height: auto;">
+        <p>{{mars.hemisphere_image_urls[1].Title}}</p>
+      </div>
+      <div class="col-md-6">
+        <img src="{{mars.hemisphere_image_urls[2].img_url}}" alt="Hems_mars" style="width: 600px; height: auto;">
+        <p>{{mars.hemisphere_image_urls[2].Title}}</p>
+      </div>
+      <div class="col-md-6">
+        <img src="{{mars.hemisphere_image_urls[3].img_url}}" alt="Hems_mars" style="width: 600px; height: auto;">
+        <p>{{mars.hemisphere_image_urls[3].Title}}</p>
+      </div>
+
     </div>
 
   </div>
+
 </body>
 
 </html>
-

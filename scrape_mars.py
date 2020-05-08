@@ -1,215 +1,128 @@
-{
- "cells": [
-  {
-   "cell_type": "markdown",
-   "metadata": {},
-   "source": [
-    "# Web Scraping Function"
-   ]
-  },
-  {
-   "cell_type": "code",
-   "execution_count": null,
-   "metadata": {},
-   "outputs": [],
-   "source": [
-    "# Dependencies\n",
-    "import requests\n",
-    "from bs4 import BeautifulSoup as bs\n",
-    "from splinter import Browser\n",
-    "import pandas as pd\n",
-    "import time"
-   ]
-  },
-  {
-   "cell_type": "code",
-   "execution_count": 25,
-   "metadata": {},
-   "outputs": [],
-   "source": [
-    "# Function for scraping\n",
-    "\n",
-    "def init_browser():\n",
-    "    # Create path and browser with chromedriver\n",
-    "    executable_path = {'executable_path': 'chromedriver.exe'}\n",
-    "    return Browser('chrome', **executable_path, headless=False)\n",
-    "\n",
-    "def scrape():\n",
-    "    browser = init_browser()\n",
-    "\n",
-    "    ### NASA Mars News\n",
-    "    # URL of page to be scraped\n",
-    "    url=\"https://mars.nasa.gov/news/\"\n",
-    "    browser.visit(url)\n",
-    "    time.sleep(1)\n",
-    "\n",
-    "    # Scrape page into Soup\n",
-    "    html=browser.html\n",
-    "    soup = bs(html, \"html.parser\")\n",
-    "\n",
-    "    # Extract the latest news title and paragraph:\n",
-    "    article=soup.find(\"div\", class_='list_text')\n",
-    "    title=article.find(\"div\", class_=\"content_title\")\n",
-    "    news_title=title.find(\"a\").text\n",
-    "    news_p=article.find(\"div\", class_ =\"article_teaser_body\").text\n",
-    "\n",
-    "#--------------------------------------------------------------------------------------------------------#    \n",
-    "    ### JPL Mars Space Images - Featured Image\n",
-    "    # URL of page to be scraped\n",
-    "    url_image='https://www.jpl.nasa.gov/spaceimages/?search=&category=Mars'\n",
-    "    browser.visit(url_image)\n",
-    "    time.sleep(1)\n",
-    "    html_image=browser.html\n",
-    "\n",
-    "    # Create BeautifulSoup object; parse with 'html.parser'\n",
-    "    soup_image=bs(html_image, 'html.parser')\n",
-    "    \n",
-    "    # Extract the latest image:\n",
-    "    containers=soup_image.find_all(\"div\",class_=\"img\")\n",
-    "    for container in containers:\n",
-    "        img=container.find('img')[\"src\"]\n",
-    "        img2=img.split('/')[4]\n",
-    "        img3=img2.split('-')[0]\n",
-    "    featured_image_url='https://www.jpl.nasa.gov/spaceimages/images/largesize/' + img3 +'_hires.jpg'\n",
-    "    \n",
-    "#--------------------------------------------------------------------------------------------------------#   \n",
-    "    ### Mars Weather\n",
-    "    # URL of page to be scraped\n",
-    "    url_tweet='https://twitter.com/marswxreport'\n",
-    "    browser.visit(url_tweet)\n",
-    "    time.sleep(1)\n",
-    "    html_tweet=browser.html\n",
-    "\n",
-    "    # Create BeautifulSoup object; parse with 'html.parser'\n",
-    "    soup_tweet=bs(html_tweet, 'html.parser')\n",
-    "    # Loop through latest tweets and find the tweet that has weather information\n",
-    "    tweet_container=soup_tweet.find_all('span')\n",
-    "    for tweet in tweet_container: \n",
-    "        weather=tweet.text\n",
-    "        if 'InSight sol' in weather:\n",
-    "            mars_weather=weather\n",
-    "            break\n",
-    "        else: \n",
-    "            pass\n",
-    "    \n",
-    "#--------------------------------------------------------------------------------------------------------#   \n",
-    "    \n",
-    "    ### Mars Facts\n",
-    "    # URL of page to be scraped\n",
-    "    url_facts='https://space-facts.com/mars/'\n",
-    "    \n",
-    "    # Extract the facts to dataframe:\n",
-    "    tables=pd.read_html(url_facts)\n",
-    "    profile=pd.DataFrame(tables[0])\n",
-    "    profile=profile.rename(columns={0:\"Facts\", 1:\"Results\"}).set_index('Facts')\n",
-    "    \n",
-    "    # Convert to html\n",
-    "    html_table=profile.to_html()\n",
-    "    \n",
-    "#--------------------------------------------------------------------------------------------------------# \n",
-    "\n",
-    "    ### Mars Hemispheres\n",
-    "    # URL of page to be scraped\n",
-    "    url_hem='https://astrogeology.usgs.gov/search/results?q=hemisphere+enhanced&k1=target&v1=Mars'\n",
-    "    browser.visit(url_hem)\n",
-    "    time.sleep(1)\n",
-    "    html_hem=browser.html\n",
-    "\n",
-    "    # Create BeautifulSoup object; parse with 'html.parser'\n",
-    "    soup_hem=bs(html_hem, 'html.parser')\n",
-    "    \n",
-    "    # Extract image urls and their titles\n",
-    "    hemisphere_image_urls=[]\n",
-    "    dic={}\n",
-    "    results=soup_hem.find_all('div', class_='item')\n",
-    "    for result in results:\n",
-    "        desc=result.find('div', class_='description')\n",
-    "        a=desc.find('a')\n",
-    "        l=a['href'].split('/')[5]\n",
-    "        link='http://astropedia.astrogeology.usgs.gov/download/Mars/Viking/' + l + '.tif/full.jpg'\n",
-    "        title_hem=a.find('h3').text\n",
-    "        dict={'Title': title_hem, 'img_url': link}\n",
-    "        hemisphere_image_urls.append(dict)\n",
-    "\n",
-    "#--------------------------------------------------------------------------------------------------------# \n",
-    "#--------------------------------------------------------------------------------------------------------# \n",
-    "    \n",
-    "    # Store data in a dictionary\n",
-    "    data = {\n",
-    "        \"news_title\": news_title,\n",
-    "        \"news_p\": news_p,\n",
-    "        \"featured_image_url\":featured_image_url,\n",
-    "        \"mars_weather\":mars_weather,\n",
-    "        \"html_table\": html_table,\n",
-    "        \"hemisphere_image_urls\": hemisphere_image_urls\n",
-    "    }\n",
-    "    \n",
-    "    # Close the browser after scraping\n",
-    "    browser.quit()\n",
-    "\n",
-    "    # Return results\n",
-    "    return data\n"
-   ]
-  },
-  {
-   "cell_type": "code",
-   "execution_count": 26,
-   "metadata": {},
-   "outputs": [
-    {
-     "data": {
-      "text/plain": [
-       "{'news_title': \"NASA's Perseverance Rover Will Look at Mars Through These 'Eyes'\",\n",
-       " 'news_p': 'A pair of zoomable cameras will help scientists and rover drivers with high-resolution color images.',\n",
-       " 'featured_image_url': 'https://www.jpl.nasa.gov/spaceimages/images/largesize/PIA23818_hires.jpg',\n",
-       " 'mars_weather': 'InSight sol 508 (2020-05-01) low -92.2ºC (-134.0ºF) high -2.4ºC (27.7ºF)\\nwinds from the SW at 5.1 m/s (11.3 mph) gusting to 15.8 m/s (35.3 mph)\\npressure at 6.80 hPa',\n",
-       " 'html_table': '<table border=\"1\" class=\"dataframe\">\\n  <thead>\\n    <tr style=\"text-align: right;\">\\n      <th></th>\\n      <th>Results</th>\\n    </tr>\\n    <tr>\\n      <th>Facts</th>\\n      <th></th>\\n    </tr>\\n  </thead>\\n  <tbody>\\n    <tr>\\n      <th>Equatorial Diameter:</th>\\n      <td>6,792 km</td>\\n    </tr>\\n    <tr>\\n      <th>Polar Diameter:</th>\\n      <td>6,752 km</td>\\n    </tr>\\n    <tr>\\n      <th>Mass:</th>\\n      <td>6.39 × 10^23 kg (0.11 Earths)</td>\\n    </tr>\\n    <tr>\\n      <th>Moons:</th>\\n      <td>2 (Phobos &amp; Deimos)</td>\\n    </tr>\\n    <tr>\\n      <th>Orbit Distance:</th>\\n      <td>227,943,824 km (1.38 AU)</td>\\n    </tr>\\n    <tr>\\n      <th>Orbit Period:</th>\\n      <td>687 days (1.9 years)</td>\\n    </tr>\\n    <tr>\\n      <th>Surface Temperature:</th>\\n      <td>-87 to -5 °C</td>\\n    </tr>\\n    <tr>\\n      <th>First Record:</th>\\n      <td>2nd millennium BC</td>\\n    </tr>\\n    <tr>\\n      <th>Recorded By:</th>\\n      <td>Egyptian astronomers</td>\\n    </tr>\\n  </tbody>\\n</table>',\n",
-       " 'hemisphere_image_urls': [{'Title': 'Cerberus Hemisphere Enhanced',\n",
-       "   'img_url': 'http://astropedia.astrogeology.usgs.gov/download/Mars/Viking/cerberus_enhanced.tif/full.jpg'},\n",
-       "  {'Title': 'Schiaparelli Hemisphere Enhanced',\n",
-       "   'img_url': 'http://astropedia.astrogeology.usgs.gov/download/Mars/Viking/schiaparelli_enhanced.tif/full.jpg'},\n",
-       "  {'Title': 'Syrtis Major Hemisphere Enhanced',\n",
-       "   'img_url': 'http://astropedia.astrogeology.usgs.gov/download/Mars/Viking/syrtis_major_enhanced.tif/full.jpg'},\n",
-       "  {'Title': 'Valles Marineris Hemisphere Enhanced',\n",
-       "   'img_url': 'http://astropedia.astrogeology.usgs.gov/download/Mars/Viking/valles_marineris_enhanced.tif/full.jpg'}]}"
-      ]
-     },
-     "execution_count": 26,
-     "metadata": {},
-     "output_type": "execute_result"
+# Dependencies
+import requests
+from bs4 import BeautifulSoup as bs
+from splinter import Browser
+import pandas as pd
+import time
+
+# Function for scraping
+
+def init_browser():
+    # Create path and browser with chromedriver
+    executable_path={'executable_path': '/usr/local/bin/chromedriver'}
+    return Browser("chrome", **executable_path, headless=False)
+
+def scrape():
+    browser = init_browser()
+    
+    ### NASA Mars News
+    # URL of page to be scraped
+    url="https://mars.nasa.gov/news/"
+    browser.visit(url)
+    time.sleep(5)
+    
+    # Scrape page into Soup
+    html=browser.html
+    soup = bs(html, "html.parser")
+    
+    # Extract the latest news title and paragraph:
+    article=soup.find("div", class_='list_text')
+    title=article.find("div", class_="content_title")
+    news_title=title.find("a").text
+    news_p=article.find("div", class_ ="article_teaser_body").text
+    
+    #--------------------------------------------------------------------------------------------------------# 
+    ### JPL Mars Space Images - Featured Image
+    # URL of page to be scraped
+    url_image='https://www.jpl.nasa.gov/spaceimages/?search=&category=Mars'
+    browser.visit(url_image)
+    time.sleep(5)
+    html_image=browser.html
+    
+    # Create BeautifulSoup object; parse with 'html.parser'
+    soup_image=bs(html_image, 'html.parser')
+
+    # Extract the latest image:
+    containers=soup_image.find_all("div",class_="img")
+    for container in containers:
+        img=container.find('img')["src"]
+        img2=img.split('/')[4]
+        img3=img2.split('-')[0]
+    featured_image_url='https://www.jpl.nasa.gov/spaceimages/images/largesize/'+img3+'_hires.jpg'
+    #--------------------------------------------------------------------------------------------------------# 
+    ### Mars Weather
+    # URL of page to be scraped
+    url_tweet='https://twitter.com/marswxreport'
+    browser.visit(url_tweet)
+    time.sleep(5)
+    html_tweet=browser.html
+    
+    # Create BeautifulSoup object; parse with 'html.parser'
+    soup_tweet=bs(html_tweet, 'html.parser')
+    # Loop through latest tweets and find the tweet that has weather information
+    tweet_container=soup_tweet.find_all('span')
+    for tweet in tweet_container: 
+        weather=tweet.text
+        if 'InSight sol' in weather:
+            mars_weather=weather
+            break
+        else: 
+            pass
+
+    #--------------------------------------------------------------------------------------------------------# 
+
+    ### Mars Facts
+    # URL of page to be scraped
+    url_facts='https://space-facts.com/mars/'
+
+    # Extract the facts to dataframe:
+    tables=pd.read_html(url_facts)
+    profile=pd.DataFrame(tables[0])
+    profile=profile.rename(columns={0:"Facts", 1:"Results"}).set_index('Facts')
+
+    # Convert to html
+    html_table=profile.to_html()
+
+    #--------------------------------------------------------------------------------------------------------# 
+    
+    ### Mars Hemispheres
+    # URL of page to be scraped
+    url_hem='https://astrogeology.usgs.gov/search/results?q=hemisphere+enhanced&k1=target&v1=Mars'
+    browser.visit(url_hem)
+    time.sleep(5)
+    html_hem=browser.html
+    
+    # Create BeautifulSoup object; parse with 'html.parser'
+    soup_hem=bs(html_hem, 'html.parser')
+
+    # Extract image urls and their titles
+    hemisphere_image_urls=[]
+    dict={}
+    results=soup_hem.find_all('div', class_='item')
+    for result in results:
+        desc=result.find('div', class_='description')
+        a=desc.find('a')
+        l=a['href'].split('/')[5]
+        link='http://astropedia.astrogeology.usgs.gov/download/Mars/Viking/' + l + '.tif/full.jpg'
+        title_hem=a.find('h3').text
+        dict={'Title': title_hem, 'img_url': link}
+        hemisphere_image_urls.append(dict)
+    
+    #--------------------------------------------------------------------------------------------------------# 
+    #--------------------------------------------------------------------------------------------------------# 
+
+    # Store data in a dictionary
+    data = {
+        "news_title": news_title,
+        "news_p": news_p,
+        "featured_image_url":featured_image_url,
+        "mars_weather":mars_weather,
+        "html_table": html_table,
+        "hemisphere_image_urls": hemisphere_image_urls
     }
-   ],
-   "source": [
-    "scrape()"
-   ]
-  },
-  {
-   "cell_type": "code",
-   "execution_count": null,
-   "metadata": {},
-   "outputs": [],
-   "source": []
-  }
- ],
- "metadata": {
-  "kernelspec": {
-   "display_name": "Python 3",
-   "language": "python",
-   "name": "python3"
-  },
-  "language_info": {
-   "codemirror_mode": {
-    "name": "ipython",
-    "version": 3
-   },
-   "file_extension": ".py",
-   "mimetype": "text/x-python",
-   "name": "python",
-   "nbconvert_exporter": "python",
-   "pygments_lexer": "ipython3",
-   "version": "3.7.4"
-  }
- },
- "nbformat": 4,
- "nbformat_minor": 2
-}
+
+    # Close the browser after scraping
+    browser.quit()
+    
+    # Return results
+    return data
